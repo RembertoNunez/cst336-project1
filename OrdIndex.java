@@ -4,6 +4,8 @@ import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
+
 import javafx.util.Pair;
 /**
  * An ordered index.  Duplicate search key values are allowed,
@@ -17,13 +19,48 @@ import javafx.util.Pair;
 
 public class OrdIndex implements DBIndex {
 
-	private ArrayList<Pair<Integer, Integer>> data;
+	private class IndexObj{
+		public int key;
+		public int block;
+		public int count;
+
+		public IndexObj(int key, int block) {
+			this.key = key;
+			this.block = block;
+			count=1;
+		}
+
+
+		public int getKey(){
+			return key;
+		}
+
+		public int getValue(){
+			return block;
+		}
+		public int decrease(){
+			count--;
+			return count;
+		}
+
+		@Override
+		public boolean equals(Object o) {
+			if (this == o) return true;
+			if (o == null || getClass() != o.getClass()) return false;
+			IndexObj indexObj = (IndexObj) o;
+			return key == indexObj.key &&
+					block == indexObj.block;
+		}
+
+	}
+
+	private ArrayList<IndexObj> data;
 
 	/**
 	 * Create an new ordered index.
 	 */
 	public OrdIndex() {
-		data= new ArrayList<Pair<Integer, Integer>> ();
+		data= new ArrayList<IndexObj> ();
 	}
 	
 	@Override
@@ -35,7 +72,6 @@ public class OrdIndex implements DBIndex {
 		if(current<data.size()) {
 			u = current + 1;
 			d = current - 1;
-
 			if (key == data.get(current).getKey()) {
 				ret.add(data.get(current).getValue());
 			}
@@ -95,12 +131,56 @@ public class OrdIndex implements DBIndex {
 
 	@Override
 	public void insert(int key, int blockNum) {
-		int index= findIndex(key);
-		if(index>=data.size())
-			data.add(new Pair<Integer, Integer>(key,blockNum));
+		boolean down = true, up = true;
+		int d, u, current;
+		current = findIndex(key);
+		if (current < data.size()) {
+			u = current + 1;
+			d = current - 1;
+
+			if (key == data.get(current).getKey()) {
+				if (data.get(current).getValue() == blockNum) {
+					data.get(current).count++;
+					return;
+				}
+			}
+
+			while (down && up) {
+				if(d  <0)
+					down = false;
+				if(u >= data.size())
+					up=false;
+				if (down) {
+					if (key == data.get(d).getKey()) {
+						if (data.get(d).getValue() == blockNum) {
+							data.get(d).count++;
+							return;
+						}
+						d--;
+					} else
+						down = false;
+
+				}
+				if ( up) {
+					if (key == data.get(u).getKey()) {
+						if (data.get(u).getValue() == blockNum) {
+							data.get(u).count++;
+							return;
+						}
+						u++;
+					} else
+						up = false;
+
+				}
+			}
+			System.out.println("Not found: " + key + ", " + blockNum);
+		}
+//		int index= findIndex(key);
+		if(current>=data.size())
+			data.add(new IndexObj(key,blockNum));
 		else
-			data.add(index,new Pair<Integer, Integer>(key,blockNum));
-		System.out.println(data);
+			data.add(current,new IndexObj(key,blockNum));
+//		System.out.println(data);
 	}
 
 	@Override
@@ -114,7 +194,8 @@ public class OrdIndex implements DBIndex {
 
 			if (key == data.get(current).getKey()) {
 				if (data.get(current).getValue() == blockNum) {
-					data.remove(current);
+					if(data.get(current).decrease()==0)
+						data.remove(current);
 					return;
 				}
 			}
@@ -123,7 +204,8 @@ public class OrdIndex implements DBIndex {
 				if (d > -1 && down) {
 					if (key == data.get(d).getKey()) {
 						if (data.get(d).getValue() == blockNum) {
-							data.remove(d);
+							if(data.get(d).decrease()==0)
+								data.remove(d);
 							return;
 						}
 						d--;
@@ -133,7 +215,8 @@ public class OrdIndex implements DBIndex {
 				if (u < data.size() && up) {
 					if (key == data.get(u).getKey()) {
 						if (data.get(u).getValue() == blockNum) {
-							data.remove(u);
+							if(data.get(u).decrease()==0)
+								data.remove(u);
 							return;
 						}
 						u++;

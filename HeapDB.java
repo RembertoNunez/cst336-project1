@@ -207,6 +207,9 @@ public class HeapDB implements DB, Iterable<Record>{
 					
 					// index maintenance
 					// YOUR CODE HERE
+					int in= schema.getFieldIndex(schema.getKey());
+					if(indexes[in]!=null)
+						indexes[in].insert(((IntField)rec.get(in)).getValue(), blockNum);
 					
 					return true;
 				}
@@ -250,6 +253,9 @@ public class HeapDB implements DB, Iterable<Record>{
 							
 							// index maintenance
 							// YOUR CODE HERE
+							int in= schema.getFieldIndex(schema.getKey());
+							if(indexes[in]!=null)
+								indexes[in].delete(((IntField)rec.get(in)).getValue(), blockNum);
 
 							return true;
 						}
@@ -297,7 +303,8 @@ public class HeapDB implements DB, Iterable<Record>{
 		// }
 
 		// replace the following line with your return statement
-		throw new UnsupportedOperationException();
+		return result;
+		//throw new UnsupportedOperationException();
 	}
 	
 	// Perform a linear search in the block with the given blockNum
@@ -386,7 +393,8 @@ public class HeapDB implements DB, Iterable<Record>{
 		// for each record in the DB, you will need to insert its
 		// search key value and the block number
 
-		throw new UnsupportedOperationException();
+	//	throw new UnsupportedOperationException();
+
 	}
 	
 	/**
