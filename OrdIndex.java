@@ -19,7 +19,7 @@ import javafx.util.Pair;
 
 public class OrdIndex implements DBIndex {
 
-	private class IndexObj{
+	class IndexObj{
 		public int key;
 		public int block;
 		public int count;
@@ -52,6 +52,14 @@ public class OrdIndex implements DBIndex {
 					block == indexObj.block;
 		}
 
+		@Override
+		public String toString() {
+			return "IndexObj{" +
+					"key=" + key +
+					", block=" + block +
+					", count=" + count +
+					'}'+'\n';
+		}
 	}
 
 	private ArrayList<IndexObj> data;
@@ -108,10 +116,10 @@ public class OrdIndex implements DBIndex {
 			return 0;
 		while(upperLimit>lowerLimit)
 		{
-			System.out.println(upperLimit+" "+ lowerLimit+" "+ current);
+
 			val=data.get(current).getKey();
 			if(val==key ) {
-				System.out.println(current);
+
 				return current;
 			}else if(val<key){
 				lowerLimit=current+1;
@@ -123,7 +131,7 @@ public class OrdIndex implements DBIndex {
 				current= ((upperLimit-lowerLimit)/2)+lowerLimit;
 			}
 		}
-		System.out.println(current);
+
 		if( current<data.size() && key>data.get(current).getKey())
 			current++;
 		return current;
@@ -145,7 +153,7 @@ public class OrdIndex implements DBIndex {
 				}
 			}
 
-			while (down && up) {
+			while (down || up) {
 				if(d  <0)
 					down = false;
 				if(u >= data.size())
@@ -173,7 +181,7 @@ public class OrdIndex implements DBIndex {
 
 				}
 			}
-			System.out.println("Not found: " + key + ", " + blockNum);
+
 		}
 //		int index= findIndex(key);
 		if(current>=data.size())
@@ -200,8 +208,12 @@ public class OrdIndex implements DBIndex {
 				}
 			}
 
-			while (down && up) {
-				if (d > -1 && down) {
+			while (down || up) {
+				if(d  <0)
+					down = false;
+				if(u >= data.size())
+					up=false;
+				if ( down) {
 					if (key == data.get(d).getKey()) {
 						if (data.get(d).getValue() == blockNum) {
 							if(data.get(d).decrease()==0)
@@ -212,7 +224,7 @@ public class OrdIndex implements DBIndex {
 					} else
 						down = false;
 				}
-				if (u < data.size() && up) {
+				if (up) {
 					if (key == data.get(u).getKey()) {
 						if (data.get(u).getValue() == blockNum) {
 							if(data.get(u).decrease()==0)
@@ -224,7 +236,7 @@ public class OrdIndex implements DBIndex {
 						up = false;
 				}
 			}
-			System.out.println("Not found: " + key + ", " + blockNum);
+
 		}
 	}
 	
