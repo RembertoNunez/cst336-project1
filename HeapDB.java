@@ -207,7 +207,11 @@ public class HeapDB implements DB, Iterable<Record>{
 					
 					// index maintenance
 					// YOUR CODE HERE
-					
+					int in= schema.getFieldIndex(schema.getKey());
+					if(indexes[in]!=null) {
+						indexes[in].insert(((IntField) rec.get(in)).getValue(), blockNum);
+					}
+
 					return true;
 				}
 			}
@@ -250,6 +254,10 @@ public class HeapDB implements DB, Iterable<Record>{
 							
 							// index maintenance
 							// YOUR CODE HERE
+							int in= schema.getFieldIndex(schema.getKey());
+							if(indexes[in]!=null) {
+								indexes[in].delete(((IntField) rec.get(in)).getValue(), blockNum);
+							}
 
 							return true;
 						}
@@ -282,7 +290,6 @@ public class HeapDB implements DB, Iterable<Record>{
 		if (fieldNum < 0) {
 			throw new IllegalArgumentException("Field '"+fname+"' not in schema.");
 		}
-		
 		List<Record> result = new ArrayList<Record>();
 		
 		// YOUR CODE HERE
@@ -295,9 +302,42 @@ public class HeapDB implements DB, Iterable<Record>{
 		// for (Record rec : this) {
 		//    ...
 		// }
+		if(indexes[fieldNum] == null) {
+//			DBIterator findRecs = new DBIterator();
+//			while (findRecs.hasNext()) {
+//				Record temp = findRecs.next();
+//				temp.deserialize(buffer.buffer, recordLocation(findRecs.r));
+//				IntField field = (IntField)temp.get(fieldNum);
+//				if (field.getValue() == key) {
+//					result.add(temp);
+//				}
+//			}
+//			return result;
+			Record temp = schema.blankRecord();
+			bf.read(bitmapBlock, blockmapBuffer);
+			for (int i = bitmapBlock+1; i < blockMap.size(); i++) {
+				if (blockMap.getBit(i)) {
+					bf.read(i, buffer);
+					for(int j = 0; j < recMap.size(); j++) {
+						if(recMap.getBit(j)) {
+							temp.deserialize(buffer.buffer, recordLocation(j));
+							if (Integer.parseInt(temp.fields.get(fieldNum).toString()) == key) {
+								result.add(temp);
+							}
+						}
+					}
+				}
+			}
+			return result;
+		}
 
-		// replace the following line with your return statement
-		throw new UnsupportedOperationException();
+		List<Integer> block = this.indexes[fieldNum].lookup(key);
+
+		for(int i = 0; i < block.size(); i++) {
+			List<Record> temp = this.lookupInBlock(fieldNum, key, block.get(i));
+			result.addAll(temp);
+		}
+		return result;
 	}
 	
 	// Perform a linear search in the block with the given blockNum
@@ -385,9 +425,18 @@ public class HeapDB implements DB, Iterable<Record>{
 		// YOUR CODE HERE
 		// for each record in the DB, you will need to insert its
 		// search key value and the block number
+		DBIterator findRecs = new DBIterator();
 
-		throw new UnsupportedOperationException();
+		while (findRecs.hasNext()) {
+			Record temp = findRecs.next();
+			temp.deserialize(buffer.buffer, recordLocation(findRecs.r));
+			IntField field = (IntField)temp.get(fieldNum);
+			index.insert(field.getValue(), findRecs.b);
+		}
+
+		this.indexes[fieldNum] = index;
 	}
+
 	
 	/**
 	 * Delete the index for the given field.  Do nothing if
